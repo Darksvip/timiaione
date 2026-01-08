@@ -1,5 +1,5 @@
 #!/bin/bash
-# 一键配置
+# 一键配置 - timi 伪装版
 
 # 检查系统是否有 IPv6 地址
 check_ipv6_support() {
@@ -27,7 +27,7 @@ add_node_config() {
         core_hysteria2=true
     else
         echo "无效的选择。请选择 1 2 3。"
-        continue
+        return # 修改 continue 为 return，防止在函数外调用报错
     fi
     while true; do
         read -rp "请输入节点Node ID：" NodeID
@@ -98,7 +98,7 @@ add_node_config() {
         esac
         read -rp "请输入节点证书域名(example.com)：" certdomain
         if [ "$certmode" != "http" ]; then
-            echo -e "${red}请手动修改配置文件后重启V2bX！${plain}"
+            echo -e "${red}请手动修改配置文件后重启 timi！${plain}"
         fi
     fi
     ipv6_support=$(check_ipv6_support)
@@ -128,9 +128,9 @@ add_node_config() {
                 "CertMode": "$certmode",
                 "RejectUnknownSni": false,
                 "CertDomain": "$certdomain",
-                "CertFile": "/etc/V2bX/fullchain.cer",
-                "KeyFile": "/etc/V2bX/cert.key",
-                "Email": "v2bx@github.com",
+                "CertFile": "/etc/timi/fullchain.cer",
+                "KeyFile": "/etc/timi/cert.key",
+                "Email": "timi@github.com",
                 "Provider": "cloudflare",
                 "DNSEnv": {
                     "EnvName": "env1"
@@ -158,9 +158,9 @@ EOF
                 "CertMode": "$certmode",
                 "RejectUnknownSni": false,
                 "CertDomain": "$certdomain",
-                "CertFile": "/etc/V2bX/fullchain.cer",
-                "KeyFile": "/etc/V2bX/cert.key",
-                "Email": "v2bx@github.com",
+                "CertFile": "/etc/timi/fullchain.cer",
+                "KeyFile": "/etc/timi/cert.key",
+                "Email": "timi@github.com",
                 "Provider": "cloudflare",
                 "DNSEnv": {
                     "EnvName": "env1"
@@ -177,7 +177,7 @@ EOF
             "ApiKey": "$ApiKey",
             "NodeID": $NodeID,
             "NodeType": "$NodeType",
-            "Hysteria2ConfigPath": "/etc/V2bX/hy2config.yaml",
+            "Hysteria2ConfigPath": "/etc/timi/hy2config.yaml",
             "Timeout": 30,
             "ListenIP": "",
             "SendIP": "0.0.0.0",
@@ -187,9 +187,9 @@ EOF
                 "CertMode": "$certmode",
                 "RejectUnknownSni": false,
                 "CertDomain": "$certdomain",
-                "CertFile": "/etc/V2bX/fullchain.cer",
-                "KeyFile": "/etc/V2bX/cert.key",
-                "Email": "v2bx@github.com",
+                "CertFile": "/etc/timi/fullchain.cer",
+                "KeyFile": "/etc/timi/cert.key",
+                "Email": "timi@github.com",
                 "Provider": "cloudflare",
                 "DNSEnv": {
                     "EnvName": "env1"
@@ -203,11 +203,11 @@ EOF
 }
 
 generate_config_file() {
-    echo -e "${yellow}V2bX 配置文件生成向导${plain}"
+    echo -e "${yellow}timi 配置文件生成向导${plain}"
     echo -e "${red}请阅读以下注意事项：${plain}"
     echo -e "${red}1. 目前该功能正处测试阶段${plain}"
-    echo -e "${red}2. 生成的配置文件会保存到 /etc/V2bX/config.json${plain}"
-    echo -e "${red}3. 原来的配置文件会保存到 /etc/V2bX/config.json.bak${plain}"
+    echo -e "${red}2. 生成的配置文件会保存到 /etc/timi/timi.json${plain}"
+    echo -e "${red}3. 原来的配置文件会保存到 /etc/timi/timi.json.bak${plain}"
     echo -e "${red}4. 目前仅部分支持TLS${plain}"
     echo -e "${red}5. 使用此功能生成的配置文件会自带审计，确定继续？(y/n)${plain}"
     read -rp "请输入：" continue_prompt
@@ -256,10 +256,10 @@ generate_config_file() {
         \"Type\": \"xray\",
         \"Log\": {
             \"Level\": \"error\",
-            \"ErrorPath\": \"/etc/V2bX/error.log\"
+            \"ErrorPath\": \"/etc/timi/error.log\"
         },
-        \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
-        \"RouteConfigPath\": \"/etc/V2bX/route.json\"
+        \"OutboundConfigPath\": \"/etc/timi/custom_outbound.json\",
+        \"RouteConfigPath\": \"/etc/timi/route.json\"
     },"
     fi
 
@@ -277,7 +277,7 @@ generate_config_file() {
             \"Server\": \"time.apple.com\",
             \"ServerPort\": 0
         },
-        \"OriginalPath\": \"/etc/V2bX/sing_origin.json\"
+        \"OriginalPath\": \"/etc/timi/sing_origin.json\"
     },"
     fi
 
@@ -297,15 +297,19 @@ generate_config_file() {
     cores_config=$(echo "$cores_config" | sed 's/},]$/}]/')
 
     # 切换到配置文件目录
-    cd /etc/V2bX
+    mkdir -p /etc/timi
+    cd /etc/timi
     
     # 备份旧的配置文件
-    mv config.json config.json.bak
+    if [ -f "timi.json" ]; then
+        mv timi.json timi.json.bak
+    fi
+
     nodes_config_str="${nodes_config[*]}"
     formatted_nodes_config="${nodes_config_str%,}"
 
-    # 创建 config.json 文件
-    cat <<EOF > /etc/V2bX/config.json
+    # 创建 timi.json 文件
+    cat <<EOF > /etc/timi/timi.json
 {
     "Log": {
         "Level": "error",
@@ -317,7 +321,7 @@ generate_config_file() {
 EOF
     
     # 创建 custom_outbound.json 文件
-    cat <<EOF > /etc/V2bX/custom_outbound.json
+    cat <<EOF > /etc/timi/custom_outbound.json
 [
     {
         "tag": "IPv4_out",
@@ -341,7 +345,7 @@ EOF
 EOF
     
     # 创建 route.json 文件
-    cat <<EOF > /etc/V2bX/route.json
+    cat <<EOF > /etc/timi/route.json
 {
     "domainStrategy": "AsIs",
     "rules": [
@@ -407,7 +411,7 @@ EOF
         dnsstrategy="prefer_ipv4"
     fi
     # 创建 sing_origin.json 文件
-    cat <<EOF > /etc/V2bX/sing_origin.json
+    cat <<EOF > /etc/timi/sing_origin.json
 {
   "dns": {
     "servers": [
@@ -482,7 +486,7 @@ EOF
 EOF
 
     # 创建 hy2config.yaml 文件           
-    cat <<EOF > /etc/V2bX/hy2config.yaml
+    cat <<EOF > /etc/timi/hy2config.yaml
 quic:
   initStreamReceiveWindow: 8388608
   maxStreamReceiveWindow: 8388608
@@ -504,6 +508,6 @@ acl:
 masquerade:
   type: 404
 EOF
-    echo -e "${green}V2bX 配置文件生成完成,正在重新启动服务${plain}"
-    v2bx restart
+    echo -e "${green}timi 配置文件生成完成,正在重新启动服务${plain}"
+    systemctl restart timi
 }
