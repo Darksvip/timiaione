@@ -16,4 +16,7 @@ timi 使用教程
 Bash
 
 wget -N https://raw.githubusercontent.com/Darksvip/timiaione/refs/heads/master/install.sh && bash install.sh
+
+
+
 下一步建议： 如果您已经完成了脚本和配置文件的更名，是否需要我为您编写一个 “一键迁移脚本”？它可以自动将服务器上现有的 V2bX 文件、配置和系统服务无缝迁移到 timi 目录下，并自动完成所有更名操作。
